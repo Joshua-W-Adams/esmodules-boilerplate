@@ -35,7 +35,7 @@ function init(options) {
 
 /* =========================== Export Public APIs =========================== */
 
-export {
+export default {
   init
   , doSomething
 };
