@@ -21,6 +21,9 @@
     "prefer-destructuring": 0,
     "operator-assignment": 0,
     "no-continue": 0,
-    "no-multiple-empty-lines": 0
+    "no-multiple-empty-lines": 0,
+    "func-names": 0,
+    "camelcase": 0,
+    "quote-props": 0
   }
 }
