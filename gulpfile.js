@@ -15,7 +15,12 @@ const webpack = require('webpack-stream');
 const rename = require('gulp-rename');
 const eslint = require('gulp-eslint');
 const stylelint = require('gulp-stylelint');
-const express = require('./test/express/express.js');
+const nodemon = require('gulp-nodemon');
+
+/* ================================ Variables =============================== */
+
+// define nodemon server parameters
+let nodemonServer;
 
 /* ============================= Configure Modules ========================== */
 
@@ -54,6 +59,34 @@ const paths = {
 
 /* ================================== Methods =============================== */
 
+function getNodemonServer () {
+  const nodemonServer = nodemon({
+    // Calls the index.js script in the root directory by default
+    // script: __dirname + '\\index.js'
+    // arguments to pass to server.js
+    // args: [`development`]
+    // specify file types to watch in dir specified below.
+    ext: 'js'
+    , ignore: [
+              'test/express/assets'
+          ]
+    , env: {
+      'NODE_ENV': 'development'
+    }
+    // cannot accept full will paths for some reason. Must be specified
+    // relative to gulpfile.js location
+    , watch: ['test/express/**/*.*']
+  })
+  nodemonServer.on('restart', function () {
+    console.log('restarted!')
+  })
+  nodemonServer.on('crash', function() {
+    console.error('Application has crashed!\n')
+    nodemonServer.emit('restart', 5)  // restart the server in 10 seconds
+  })
+  return nodemonServer;
+}
+
 function getWebpackCnf (name) {
 	return {
 	  entry: {
@@ -65,6 +98,7 @@ function getWebpackCnf (name) {
 			libraryTarget: 'var',
       library: pkg.name.replace('-', ''),
 	  },
+		// exclude dependacies from the webpack output by listing them here
 		externals: {},
 	  optimization: {
 	    minimize: false
@@ -174,7 +208,13 @@ gulp.task('js-with-dep', function (done) {
 		"some-module-1": "someModule1",
 		"./dist/some-module-2.js": "someModule2"
 	};
-  return compileJs(entry, cnf, done);
+	// check for empty object (no dependancies)
+  if (Object.keys(settings.dependancies.js).length === 0 && settings.dependancies.js.constructor === Object) {
+    // No dependancies in package. Call done and end task.
+    done();
+  } else {
+    return compileJs(entry, cnf, done);
+  }
 })
 
 gulp.task('js-min-with-dep', function (done) {
@@ -185,7 +225,13 @@ gulp.task('js-min-with-dep', function (done) {
 		"./dist/some-module-2.js": "someModule2"
 	};
 	cnf.optimization = { minimize: true };
-  return compileJs(entry, cnf, done);
+	// check for empty object (no dependancies)
+	if (Object.keys(settings.dependancies.js).length === 0 && settings.dependancies.js.constructor === Object) {
+		// No dependancies in package. Call done and end task.
+		done();
+	} else {
+		return compileJs(entry, cnf, done);
+	}
 })
 
 gulp.task('css-no-dep', function (done) {
@@ -212,6 +258,20 @@ gulp.task('sasslint', function (done) {
   return sassLint(arr, done);
 });
 
+gulp.task('serve', function (done) {
+	 nodemonServer = getNodemonServer();
+})
+
+gulp.task('lint', function (done) {
+	 gulp.watch(paths.inputs.sass, gulp.series('sasslint'));
+	 gulp.watch(paths.inputs.js, gulp.series('jslint'));
+})
+
+gulp.task('build', function (done) {
+	 gulp.watch(paths.inputs.sass, gulp.series('css-no-dep', 'css-with-dep'));
+	 gulp.watch(paths.inputs.js, gulp.series('js-no-dep', 'js-min-no-dep', 'js-with-dep', 'js-min-with-dep'));
+})
+
 /* ================================ Export Tasks ============================ */
 
 /*
@@ -219,7 +279,5 @@ gulp.task('sasslint', function (done) {
  */
 
  exports.default = function () {
-	 express.init();
-   gulp.watch(paths.inputs.sass, gulp.series('sasslint', 'css-no-dep', 'css-with-dep'));
-   gulp.watch(paths.inputs.js, gulp.series('jslint', 'js-no-dep', 'js-min-no-dep', 'js-with-dep', 'js-min-with-dep'));
+   console.log('no default task defined');
  };

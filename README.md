@@ -22,14 +22,28 @@ git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY
 npm install
 ```
 
-4. Run Gulp task runner
+4. Run nodemon server
 
 ```
-gulp
+gulp serve
 ```
 
 5. Sample module can now be accessed on localhost
 
 ```
 http://localhost/
+```
+
+## Deployment
+
+1. Lint application
+
+```
+gulp lint
+```
+
+2. Build dist files
+
+```
+gulp build
 ```
